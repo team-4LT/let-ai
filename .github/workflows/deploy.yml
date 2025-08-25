@@ -22,11 +22,11 @@ jobs:
         script: |
           # 프로젝트 경로 찾기
           if [ -d "/home/ubuntu/LET_AI_SERVER" ]; then
-            cd /home/ubuntu/LET_AI_SERVER
+            PROJECT_DIR="/home/ubuntu/LET_AI_SERVER"
           elif [ -d "/home/ubuntu/let-ai" ]; then
-            cd /home/ubuntu/let-ai
+            PROJECT_DIR="/home/ubuntu/let-ai"
           elif [ -d "~/LET_AI_SERVER" ]; then
-            cd ~/LET_AI_SERVER
+            PROJECT_DIR="~/LET_AI_SERVER"
           else
             echo "❌ 프로젝트 디렉토리를 찾을 수 없습니다."
             echo "현재 디렉토리 내용:"
@@ -36,13 +36,27 @@ jobs:
             exit 1
           fi
           
+          cd $PROJECT_DIR
           echo "📍 현재 디렉토리: $(pwd)"
           
           # 최신 코드 가져오기
           git fetch origin
           git reset --hard origin/main
           
-          # .env 파일이 없다면 생성 (이미 있으면 기존 사용)
+          # docker-compose.yml 위치 확인
+          if [ -f "docker-compose.yml" ]; then
+            echo "✅ docker-compose.yml 찾음"
+          elif [ -f "ai_exercise_service/docker-compose.yml" ]; then
+            echo "❌ docker-compose.yml이 루트에 없습니다. 파일 구조를 확인하세요."
+            ls -la
+            exit 1
+          else
+            echo "❌ docker-compose.yml을 찾을 수 없습니다."
+            ls -la
+            exit 1
+          fi
+          
+          # .env 파일 확인
           if [ ! -f .env ]; then
             echo "❌ .env 파일이 없습니다. EC2에 직접 생성해주세요."
             exit 1
