@@ -21,7 +21,7 @@ class Settings(BaseSettings):
     max_burn_rate: float = 0.25  # 25%
     
     class Config:
-        env_file = ".env"
+        env_file = "../.env"
         case_sensitive = False
 
 # 전역 설정 인스턴스
