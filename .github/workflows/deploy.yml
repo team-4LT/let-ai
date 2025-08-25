@@ -20,7 +20,23 @@ jobs:
         username: ${{ secrets.EC2_USER }}
         key: ${{ secrets.EC2_SSH_KEY }}
         script: |
-          cd /home/ubuntu/LET_AI_SERVER
+          # 프로젝트 경로 찾기
+          if [ -d "/home/ubuntu/LET_AI_SERVER" ]; then
+            cd /home/ubuntu/LET_AI_SERVER
+          elif [ -d "/home/ubuntu/let-ai" ]; then
+            cd /home/ubuntu/let-ai
+          elif [ -d "~/LET_AI_SERVER" ]; then
+            cd ~/LET_AI_SERVER
+          else
+            echo "❌ 프로젝트 디렉토리를 찾을 수 없습니다."
+            echo "현재 디렉토리 내용:"
+            ls -la
+            echo "홈 디렉토리 내용:"
+            ls -la ~
+            exit 1
+          fi
+          
+          echo "📍 현재 디렉토리: $(pwd)"
           
           # 최신 코드 가져오기
           git fetch origin
