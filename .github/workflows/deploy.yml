@@ -39,9 +39,12 @@ jobs:
           cd $PROJECT_DIR
           echo "📍 현재 디렉토리: $(pwd)"
           
-          # 최신 코드 가져오기
-          git fetch origin
-          git reset --hard origin/main
+          # 최신 코드 가져오기 (public repo인 경우)
+          git pull origin main || {
+            echo "❌ Git pull 실패. Repository가 private이면 SSH 키를 설정하거나 public으로 만드세요."
+            echo "현재 원격 URL: $(git remote get-url origin)"
+            exit 1
+          }
           
           # docker-compose.yml 위치 확인
           if [ -f "docker-compose.yml" ]; then
