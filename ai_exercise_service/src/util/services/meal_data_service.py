@@ -4,13 +4,14 @@ import calendar
 from datetime import datetime
 from typing import Dict, List, Any, Optional
 import logging
+import os
 
 logger = logging.getLogger(__name__)
 
 class MealDataService:
     def __init__(self):
-        self.spring_url = "http://localhost:8080"
-        self.timeout = 30.0
+        self.spring_url = os.getenv("SPRING_SERVER_URL", "http://localhost:8080")
+        self.timeout = float(os.getenv("SPRING_API_TIMEOUT", 30.0))
     
     async def get_monthly_meal_data(self, token: str, year: int, month: int) -> Dict[str, Any]:
         """
@@ -80,14 +81,46 @@ class MealDataService:
             return {"average_rating": 0.0}
     
     async def _get_menu_rankings(self, client: httpx.AsyncClient, headers: Dict[str, str]) -> Dict[str, Any]:
-        """메뉴 순위 정보 조회"""
+        """메뉴 순위 정보 조회 - 페이징 처리"""
         try:
-            response = await client.get(
-                f"{self.spring_url}/menu-rank",
-                headers=headers
-            )
-            response.raise_for_status()
-            return response.json()
+            all_menus = []
+            page = 1  # 1부터 시작
+            
+            while True:
+                response = await client.get(
+                    f"{self.spring_url}/menu-rank",
+                    headers=headers,
+                    params={"page": page, "reverse": "true"}
+                )
+                response.raise_for_status()
+                
+                data = response.json()
+                if not data.get("data", {}).get("menus"):
+                    break
+                    
+                page_data = data["data"]
+                current_menus = page_data["menus"]
+                all_menus.extend(current_menus)
+                
+                # 마지막 페이지인지 확인 - 응답에서 받은 메뉴가 없거나 현재 페이지가 총 페이지보다 클 때
+                total = page_data.get("total", 0)
+                current_page = page_data.get("page", page)
+                page_size = page_data.get("size", len(current_menus))
+                
+                if not current_menus or (page_size > 0 and current_page >= (total + page_size - 1) // page_size):
+                    break
+                    
+                page += 1
+            
+            return {
+                "data": {
+                    "menus": all_menus,
+                    "total": len(all_menus)
+                },
+                "status": 200,
+                "message": "메뉴 순위 조회 성공"
+            }
+            
         except Exception as e:
             logger.error(f"메뉴 순위 조회 실패: {str(e)}")
             return {}

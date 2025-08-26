@@ -4,6 +4,7 @@ from fastapi import Depends
 import httpx
 import logging
 import jwt
+import os
 
 logger = logging.getLogger(__name__)
 
@@ -11,8 +12,8 @@ security = HTTPBearer()
 
 class AuthService:
     def __init__(self):
-        self.spring_url = "http://localhost:8080"
-        self.timeout = 30.0
+        self.spring_url = os.getenv("SPRING_SERVER_URL", "http://localhost:8080")
+        self.timeout = float(os.getenv("SPRING_API_TIMEOUT", 30.0))
     
     async def verify_token(self, credentials: HTTPAuthorizationCredentials = Depends(security)) -> str:
         """

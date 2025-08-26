@@ -20,8 +20,8 @@ class ExerciseRecommendationService:
     """사용자 칼로리 기반 운동 추천 서비스 - LangGraph 기반"""
     
     def __init__(self):
-        self.spring_url = "http://localhost:8080"
-        self.timeout = 30.0
+        self.spring_url = os.getenv("SPRING_SERVER_URL", "http://localhost:8080")
+        self.timeout = float(os.getenv("SPRING_API_TIMEOUT", 30.0))
         self.graph = exercise_recommendation_graph
     
     async def recommend_exercises_auto(self, user_id: str, token: str) -> Dict[str, Any]:
