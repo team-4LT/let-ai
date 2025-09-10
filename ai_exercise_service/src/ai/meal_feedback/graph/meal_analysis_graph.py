@@ -64,6 +64,7 @@ def process_meal_data_node(state: MealAnalysisState) -> Dict[str, Any]:
              "\n- 구체적인 메뉴명과 점수 언급"  
              "\n- 학년별 차이점 구체적 분석"
              "\n- 특정 날짜의 특이사항 언급"
+             "\n- 급식량 평가 분석 (FEW/SUITABLE/MUCH 비율과 식사별 특성)"
              "\n- 데이터 기반 개선안 제시"),
             ("human",
              "급식 데이터:\n{raw_data}\n\n"
@@ -73,7 +74,8 @@ def process_meal_data_node(state: MealAnalysisState) -> Dict[str, Any]:
              "2. 실제 메뉴명을 언급한 구체적 분석\n"
              "3. 학년별 참여율 차이에 대한 구체적 언급\n"
              "4. 날짜별 패턴이나 특이사항\n"
-             "5. 데이터 기반의 실질적 개선 제안\n\n"
+             "5. 급식량 평가 분석 (FEW/SUITABLE/MUCH 비율, 식사별 급식량 특성)\n"
+             "6. 데이터 기반의 실질적 개선 제안\n\n"
              "중요: 매번 다른 관점으로 분석하고, 일반적인 조언 대신 이 데이터에서만 나올 수 있는 "
              "구체적이고 특별한 인사이트를 제공해주세요. 실제 수치와 메뉴명을 정확히 활용하세요.")
         ])

@@ -42,6 +42,9 @@ class MealDataService:
                 # 7. 낮은 참여율 분석
                 low_participation = await self._get_low_participation_analysis(client, headers, year, month)
                 
+                # 8. 급식량 평가 데이터 조회
+                meal_amounts = await self._get_meal_amounts(client, headers)
+                
                 # 종합 데이터 구성
                 comprehensive_data = {
                     "monthly_statistics": monthly_stats,
@@ -50,7 +53,8 @@ class MealDataService:
                     "menu_rankings": menu_ranks,
                     "meal_participation_rates": meal_rates,
                     "user_daily_data": user_daily_data,
-                    "low_participation_analysis": low_participation
+                    "low_participation_analysis": low_participation,
+                    "meal_amounts": meal_amounts
                 }
                 
                 logger.info(f"종합 급식 데이터 수집 완료: {year}년 {month}월")
@@ -223,6 +227,67 @@ class MealDataService:
         except Exception as e:
             logger.error(f"낮은 참여율 분석 실패: {str(e)}")
             return {}
+    
+    async def _get_meal_amounts(self, client: httpx.AsyncClient, headers: Dict[str, str]) -> Dict[str, Any]:
+        """급식량 평가 데이터 조회"""
+        try:
+            response = await client.get(
+                f"{self.spring_url}/meal-amount",
+                headers=headers
+            )
+            response.raise_for_status()
+            
+            api_response = response.json()
+            meal_amounts = api_response.get("data", [])
+            
+            # 급식량 평가 통계 계산
+            amount_stats = self._analyze_meal_amounts(meal_amounts)
+            
+            return {
+                "data": meal_amounts,
+                "statistics": amount_stats,
+                "status": api_response.get("status", 200),
+                "message": api_response.get("message", "급식량 평가 조회 성공")
+            }
+        except Exception as e:
+            logger.error(f"급식량 평가 조회 실패: {str(e)}")
+            return {}
+    
+    def _analyze_meal_amounts(self, meal_amounts: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """급식량 평가 데이터 분석"""
+        if not meal_amounts:
+            return {}
+        
+        # 평가별 카운트
+        rating_counts = {"FEW": 0, "SUITABLE": 0, "MUCH": 0}
+        meal_type_ratings = {"조식": {"FEW": 0, "SUITABLE": 0, "MUCH": 0},
+                           "중식": {"FEW": 0, "SUITABLE": 0, "MUCH": 0},
+                           "석식": {"FEW": 0, "SUITABLE": 0, "MUCH": 0}}
+        
+        for amount_data in meal_amounts:
+            rating = amount_data.get("rating", "SUITABLE")
+            meal = amount_data.get("meal", {})
+            meal_type = meal.get("mealType", "")
+            
+            if rating in rating_counts:
+                rating_counts[rating] += 1
+            
+            if meal_type in meal_type_ratings and rating in meal_type_ratings[meal_type]:
+                meal_type_ratings[meal_type][rating] += 1
+        
+        total_evaluations = sum(rating_counts.values())
+        
+        # 비율 계산
+        rating_percentages = {}
+        for rating, count in rating_counts.items():
+            rating_percentages[rating] = round((count / total_evaluations * 100) if total_evaluations > 0 else 0, 1)
+        
+        return {
+            "total_evaluations": total_evaluations,
+            "rating_counts": rating_counts,
+            "rating_percentages": rating_percentages,
+            "meal_type_ratings": meal_type_ratings
+        }
 
 # 전역 서비스 인스턴스
 meal_data_service = MealDataService()
